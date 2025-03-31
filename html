@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Circulatory System Quiz</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #80deea);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .quiz-container {
+      background: white;
+      width: 90%;
+      max-width: 700px;
+      padding: 20px 30px;
+      margin: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      text-align: center;
+      position: relative;
+    }
+    .question {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .answer {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+    }
+    .answer:hover {
+      transform: scale(1.03);
+    }
+    .correct {
+      background-color: #4caf50 !important;
+    }
+    .incorrect {
+      background-color: #f44336 !important;
+    }
+    #score {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+    #percentage {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+    #restartButton {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 20px;
+    }
+    #restartButton:hover {
+      background-color: #0056b3;
+    }
+    /* Drag & Drop Question Styles */
+    .drag-container {
+      margin: 20px 0;
+    }
+    .drop-zone {
+      width: 90%;
+      padding: 15px;
+      margin: 10px auto;
+      border: 2px dashed #007bff;
+      border-radius: 8px;
+      min-height: 50px;
+      line-height: 50px;
+      color: #333;
+    }
+    .draggable {
+      display: inline-block;
+      padding: 10px;
+      background-color: #ff9800;
+      color: white;
+      border-radius: 5px;
+      cursor: grab;
+      margin: 10px;
+      font-size: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    /* End Screen */
+    #endScreen {
+      display: none;
+      background: white;
+      width: 90%;
+      max-width: 700px;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      margin-top: 20px;
+    }
+    #endScreen .result {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    #downloadButton {
+      padding: 15px 30px;
+      background-color: #4caf50;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 20px auto;
+      display: block;
+    }
+    #downloadButton:hover {
+      background-color: #388e3c;
+    }
+    /* Confetti styles */
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: red;
+      opacity: 0.8;
+      animation: fall 1.5s linear forwards;
+    }
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
+    }
+    /* Score Animation */
+    .score-animation {
+      position: absolute;
+      font-size: 20px;
+      font-weight: bold;
+      animation: fly 1s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes fly {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-30px); }
+    }
+  </style>
+</head>
+<body>
+  <button id="restartButton" onclick="restartQuiz()">Restart Quiz</button>
+  <div class="quiz-container" id="quizContainer">
+    <div id="quizContent">Loading...</div>
+    <div id="score">Score: 0</div>
+    <div id="percentage"></div>
+  </div>
+  <div id="endScreen">
+    <div class="result" id="endScore">Score: 0</div>
+    <div class="result" id="endPercentage">Percentage: 0%</div>
+    <button id="downloadButton" onclick="downloadImage()">Download Your Result</button>
+  </div>
+
+  <script>
+    let score = 0;
+    let currentItemIndex = 0;
+    let totalQuestions = 0;
+
+    // 20 Multiple Choice Questions
+    const mcQuestions = [
+      {
+        question: "Where is the heart located?",
+        answers: ["Left side of the chest", "Right side of the chest", "Center of the chest", "Back of the chest"],
+        correct: "Left side of the chest"
+      },
+      {
+        question: "The heart is approximately the size of:",
+        answers: ["A fist", "A grapefruit", "A basketball", "A coin"],
+        correct: "A fist"
+      },
+      {
+        question: "What is the primary function of the heart?",
+        answers: ["To pump blood through the body", "To store oxygen", "To create energy", "To filter blood"],
+        correct: "To pump blood through the body"
+      },
+      {
+        question: "From which chamber is oxygen-rich blood pumped to the body?",
+        answers: ["Left ventricle", "Right ventricle", "Left atrium", "Right atrium"],
+        correct: "Left ventricle"
+      },
+      {
+        question: "Which chamber receives oxygen-rich blood from the lungs?",
+        answers: ["Left atrium", "Right atrium", "Left ventricle", "Right ventricle"],
+        correct: "Left atrium"
+      },
+      {
+        question: "Which chamber receives deoxygenated blood from the body?",
+        answers: ["Right atrium", "Left atrium", "Right ventricle", "Left ventricle"],
+        correct: "Right atrium"
+      },
+      {
+        question: "What do capillaries do?",
+        answers: ["Convey blood between arterioles and venules", "Carry blood back to the heart", "Store blood", "Filter blood"],
+        correct: "Convey blood between arterioles and venules"
+      },
+      {
+        question: "What is blood clotting?",
+        answers: ["A process to stop bleeding", "A process to pump blood", "A process to oxygenate blood", "A process to digest food"],
+        correct: "A process to stop bleeding"
+      },
+      {
+        question: "What causes atherosclerosis?",
+        answers: ["Build-up of cholesterol in the arteries", "High blood pressure", "Inflammation of the heart muscle", "Blood clotting"],
+        correct: "Build-up of cholesterol in the arteries"
+      },
+      {
+        question: "What is cholesterol?",
+        answers: ["A waxy, fat-like substance found in all cells", "A small blood vessel", "A type of blood cell", "A heart disease"],
+        correct: "A waxy, fat-like substance found in all cells"
+      },
+      {
+        question: "What is a stroke?",
+        answers: ["A condition caused by poor blood flow to the brain", "A heart attack", "A blocked artery", "An irregular heartbeat"],
+        correct: "A condition caused by poor blood flow to the brain"
+      },
+      {
+        question: "Which blood type can donate to all blood types?",
+        answers: ["Type O", "Type A", "Type B", "Type AB"],
+        correct: "Type O"
+      },
+      {
+        question: "What percentage of blood is plasma?",
+        answers: ["55%", "45%", "70%", "60%"],
+        correct: "55%"
+      },
+      {
+        question: "What percentage of blood consists of platelets?",
+        answers: ["0.01%", "1%", "10%", "5%"],
+        correct: "0.01%"
+      },
+      {
+        question: "What percentage of blood is red blood cells?",
+        answers: ["41%", "30%", "50%", "60%"],
+        correct: "41%"
+      },
+      {
+        question: "What is coronary artery disease?",
+        answers: ["Disease affecting arteries that supply the heart", "High blood pressure", "Blood clotting", "A type of stroke"],
+        correct: "Disease affecting arteries that supply the heart"
+      },
+      {
+        question: "What is hypertension?",
+        answers: ["High blood pressure", "Low blood pressure", "Heart failure", "Stroke"],
+        correct: "High blood pressure"
+      },
+      {
+        question: "What is heart failure?",
+        answers: ["A condition where the heart cannot pump blood efficiently", "A blocked artery", "A stroke", "Inflammation of the heart lining"],
+        correct: "A condition where the heart cannot pump blood efficiently"
+      },
+      {
+        question: "What is myocarditis?",
+        answers: ["Inflammation of the heart muscle", "Inflammation of the lining around the heart", "A tear in the aorta", "A blocked artery"],
+        correct: "Inflammation of the heart muscle"
+      },
+      {
+        question: "What is pericarditis?",
+        answers: ["Inflammation of the lining around the heart", "A condition where the heart cannot pump blood", "A blocked artery", "High blood pressure"],
+        correct: "Inflammation of the lining around the heart"
+      }
+    ];
+
+    // 25 Drag-and-Drop Questions (each question contains a term, the correct definition, and two distractors)
+    const dragQuestions = [
+      {
+        term: "Heart",
+        correct: "Organ that pumps blood through the body",
+        distractors: ["Smallest blood vessels that convey blood", "Liquid component of blood (about 55%)"]
+      },
+      {
+        term: "Left Atrium",
+        correct: "Receives oxygen-rich blood from the lungs",
+        distractors: ["Pumps oxygen-rich blood to the body", "Receives deoxygenated blood from the body"]
+      },
+      {
+        term: "Left Ventricle",
+        correct: "Pumps oxygen-rich blood to the body",
+        distractors: ["Receives oxygen-rich blood from the lungs", "Tear in the aorta's wall"]
+      },
+      {
+        term: "Right Atrium",
+        correct: "Receives deoxygenated blood from the body",
+        distractors: ["Pumps deoxygenated blood to the lungs", "Small branches of arteries"]
+      },
+      {
+        term: "Right Ventricle",
+        correct: "Pumps deoxygenated blood to the lungs",
+        distractors: ["Receives deoxygenated blood from the body", "Abnormal bulge in the wall of an artery"]
+      },
+      {
+        term: "Capillaries",
+        correct: "Smallest blood vessels that convey blood between arterioles and venules",
+        distractors: ["Organ that pumps blood through the body", "Disease of the heart muscle"]
+      },
+      {
+        term: "Blood clotting",
+        correct: "Process that stops bleeding",
+        distractors: ["High blood pressure", "Inflammation of the heart muscle"]
+      },
+      {
+        term: "Cholesterol",
+        correct: "A waxy, fat-like substance found in all cells",
+        distractors: ["Small branches of arteries", "Medical condition due to poor blood flow to the brain"]
+      },
+      {
+        term: "Atherosclerosis",
+        correct: "Build-up of cholesterol in the arteries",
+        distractors: ["Process that stops bleeding", "Categories of blood based on antigens (A, B, AB, O)"]
+      },
+      {
+        term: "Stroke",
+        correct: "Medical condition due to poor blood flow to the brain",
+        distractors: ["Inflammation of the lining around the heart", "Tear in the aorta's wall"]
+      },
+      {
+        term: "Coronary artery disease",
+        correct: "Disease affecting arteries that supply the heart",
+        distractors: ["Organ that pumps blood through the body", "Liquid component of blood (about 55%)"]
+      },
+      {
+        term: "Hypertension",
+        correct: "High blood pressure",
+        distractors: ["Inflammation of the heart muscle", "Small veins that collect blood from capillaries"]
+      },
+      {
+        term: "Heart failure",
+        correct: "Condition where the heart cannot pump blood efficiently",
+        distractors: ["Abnormal bulge in the wall of an artery", "Process that stops bleeding"]
+      },
+      {
+        term: "Aortic dissection",
+        correct: "Tear in the aorta's wall",
+        distractors: ["Inflammation of the lining around the heart", "Disease of the heart muscle"]
+      },
+      {
+        term: "Aneurysm",
+        correct: "Abnormal bulge in the wall of an artery",
+        distractors: ["High blood pressure", "Organ that pumps blood through the body"]
+      },
+      {
+        term: "Myocarditis",
+        correct: "Inflammation of the heart muscle",
+        distractors: ["Process that stops bleeding", "Categories of blood based on antigens (A, B, AB, O)"]
+      },
+      {
+        term: "Pericarditis",
+        correct: "Inflammation of the lining around the heart",
+        distractors: ["Tear in the aorta's wall", "High blood pressure"]
+      },
+      {
+        term: "Cardiomyopathy",
+        correct: "Disease of the heart muscle",
+        distractors: ["Smallest blood vessels that convey blood", "Liquid component of blood (about 55%)"]
+      },
+      {
+        term: "Blood types",
+        correct: "Categories of blood based on antigens (A, B, AB, O)",
+        distractors: ["Organ that pumps blood through the body", "Inflammation of the heart muscle"]
+      },
+      {
+        term: "Plasma",
+        correct: "Liquid component of blood (about 55%)",
+        distractors: ["Cell fragments aiding in clotting (about 0.01%)", "Cells that carry oxygen (about 41%)"]
+      },
+      {
+        term: "Platelets",
+        correct: "Cell fragments aiding in clotting (about 0.01%)",
+        distractors: ["Liquid component of blood (about 55%)", "Smallest blood vessels that convey blood"]
+      },
+      {
+        term: "Red Blood Cells",
+        correct: "Cells that carry oxygen (about 41%)",
+        distractors: ["Categories of blood based on antigens (A, B, AB, O)", "Small branches of arteries"]
+      },
+      {
+        term: "Arterioles",
+        correct: "Small branches of arteries",
+        distractors: ["Small veins that collect blood from capillaries", "Inflammation of the heart muscle"]
+      },
+      {
+        term: "Venules",
+        correct: "Small veins that collect blood from capillaries",
+        distractors: ["High blood pressure", "Tear in the aorta's wall"]
+      },
+      {
+        term: "Circulatory system",
+        correct: "Network that transports blood throughout the body",
+        distractors: ["Organ that pumps blood through the body", "Process that stops bleeding"]
+      }
+    ];
+
+    // Combine the two types into one quizItems array (20 MC + 25 Drag = 45 questions)
+    let quizItems = [];
+    mcQuestions.forEach(q => quizItems.push({ type: "mc", data: q }));
+    dragQuestions.forEach(q => quizItems.push({ type: "drag", data: q }));
+    // Optionally, you can shuffle the order
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+    shuffle(quizItems);
+
+    const quizContent = document.getElementById("quizContent");
+    const scoreEl = document.getElementById("score");
+    const percentageEl = document.getElementById("percentage");
+    const endScreen = document.getElementById("endScreen");
+    const endScore = document.getElementById("endScore");
+    const endPercentage = document.getElementById("endPercentage");
+
+    // Start the quiz
+    loadNextItem();
+
+    function loadNextItem() {
+      quizContent.innerHTML = "";
+      // If finished all questions, show the end screen
+      if (currentItemIndex >= quizItems.length) {
+        const percentage = ((score / (totalQuestions * 2)) * 100).toFixed(2);
+        scoreEl.innerHTML = `Score: ${score}`;
+        percentageEl.innerHTML = `You got ${percentage}% correct.`;
+        endScore.innerText = `Score: ${score}`;
+        endPercentage.innerText = `Percentage: ${percentage}%`;
+        endScreen.style.display = "block";
+        return;
+      }
+      let item = quizItems[currentItemIndex];
+      if (item.type === "mc") {
+        loadMC(item.data);
+      } else if (item.type === "drag") {
+        loadDrag(item.data);
+      }
+      totalQuestions++;
+    }
+
+    // Multiple Choice Question Loader
+    function loadMC(q) {
+      let qEl = document.createElement("div");
+      qEl.className = "question";
+      qEl.innerText = q.question;
+      quizContent.appendChild(qEl);
+      
+      let answers = q.answers.slice();
+      shuffle(answers);
+      answers.forEach(ans => {
+        let btn = document.createElement("button");
+        btn.className = "answer";
+        btn.innerText = ans;
+        btn.onclick = () => {
+          let isCorrect = ans === q.correct;
+          if (isCorrect) {
+            btn.classList.add("correct");
+            launchConfetti();
+            score += 2;
+          } else {
+            btn.classList.add("incorrect");
+            score -= 2;
+          }
+          document.querySelectorAll(".answer").forEach(b => b.disabled = true);
+          setTimeout(() => {
+            scoreEl.innerText = `Score: ${score}`;
+            currentItemIndex++;
+            loadNextItem();
+          }, 1000);
+        };
+        quizContent.appendChild(btn);
+      });
+    }
+
+    // Drag and Drop Question Loader (each drag question shows one term with three draggable options)
+    function loadDrag(q) {
+      let qEl = document.createElement("div");
+      qEl.className = "question";
+      qEl.innerText = `Match the following: ${q.term}`;
+      quizContent.appendChild(qEl);
+      
+      // Create drop zone
+      let dropZone = document.createElement("div");
+      dropZone.className = "drop-zone";
+      dropZone.innerText = "Drag your answer here";
+      dropZone.ondragover = (e) => e.preventDefault();
+      dropZone.ondrop = (e) => {
+        e.preventDefault();
+        let dropped = e.dataTransfer.getData("text");
+        if (dropped === q.correct) {
+          dropZone.style.backgroundColor = "#4caf50";
+          score += 2;
+        } else {
+          dropZone.style.backgroundColor = "#f44336";
+          score -= 2;
+        }
+        setTimeout(() => {
+          scoreEl.innerText = `Score: ${score}`;
+          currentItemIndex++;
+          loadNextItem();
+        }, 1000);
+      };
+      quizContent.appendChild(dropZone);
+      
+      // Create draggable options
+      let options = [q.correct, ...q.distractors];
+      shuffle(options);
+      let optionsContainer = document.createElement("div");
+      optionsContainer.className = "drag-container";
+      options.forEach(opt => {
+        let dragItem = document.createElement("div");
+        dragItem.className = "draggable";
+        dragItem.innerText = opt;
+        dragItem.setAttribute("draggable", true);
+        dragItem.ondragstart = (e) => {
+          e.dataTransfer.setData("text", opt);
+        };
+        optionsContainer.appendChild(dragItem);
+      });
+      quizContent.appendChild(optionsContainer);
+    }
+
+    // Confetti animation function for correct answers
+    function launchConfetti() {
+      const container = document.getElementById("quizContainer");
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement("div");
+        confetti.classList.add("confetti-piece");
+        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        confetti.style.left = Math.random() * 100 + "%";
+        confetti.style.top = "0px";
+        container.appendChild(confetti);
+        setTimeout(() => { confetti.remove(); }, 1500);
+      }
+    }
+
+    // Restart quiz function
+    function restartQuiz() {
+      score = 0;
+      currentItemIndex = 0;
+      totalQuestions = 0;
+      shuffle(quizItems);
+      loadNextItem();
+      scoreEl.innerText = `Score: ${score}`;
+      percentageEl.innerText = "";
+      endScreen.style.display = "none";
+    }
+
+    // Download result as image
+    function downloadImage() {
+      let canvas = document.createElement("canvas");
+      let ctx = canvas.getContext("2d");
+      canvas.width = 400;
+      canvas.height = 200;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "#333";
+      ctx.fillText(`Score: ${score}`, 20, 40);
+      ctx.fillText(`Date: ${new Date().toLocaleDateString()}`, 20, 70);
+      const percentageText = endPercentage.innerText;
+      ctx.fillText(`Percentage: ${percentageText}`, 20, 100);
+      let link = document.createElement("a");
+      link.href = canvas.toDataURL();
+      link.download = "quiz_result.png";
+      link.click();
+    }
+  </script>
+</body>
+</html>
